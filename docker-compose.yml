@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audit_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - audit_network
+    volumes:
+      - model_artifacts:/app/artifacts
+      - reports_output:/app/reports
+
+  dashboard:
+    image: python:3.11-slim
+    container_name: audit_dashboard
+    ports:
+      - "8501:8501"
+    command: >
+      bash -c "pip install streamlit pandas requests && 
+               streamlit run dashboard/app.py --server.port=8501 --server.address=0.0.0.0"
+    volumes:
+      - .:/app
+    working_dir: /app
+    networks:
+      - audit_network
+    depends_on:
+      - api
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: audit_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=audit_user
+      - POSTGRES_PASSWORD=secure_password
+      - POSTGRES_DB=audit_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - audit_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit_user -d audit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: audit_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - audit_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  audit_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  model_artifacts:
+  reports_output:

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Auditoría Financiera — {{ period_from }} al {{ period_to }}</title>
+    <style>
+        /* ─── Variables y Reset ─────────────────────────────────────── */
+        :root {
+            --color-primary: #1e3a5f;
+            --color-secondary: #2d6a4f;
+            --color-accent: #e63946;
+            --color-warning: #f4a261;
+            --color-bg: #ffffff;
+            --color-surface: #f8f9fa;
+            --color-border: #dee2e6;
+            --color-text: #212529;
+            --color-text-muted: #6c757d;
+            --font-main: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-main);
+            font-size: 10pt;
+            color: var(--color-text);
+            background: var(--color-bg);
+            line-height: 1.5;
+        }
+
+        /* ─── Portada ───────────────────────────────────────────────── */
+        .cover-page {
+            page-break-after: always;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            text-align: center;
+        }
+
+        .cover-logo { font-size: 48pt; margin-bottom: 20px; }
+        .cover-title { font-size: 28pt; font-weight: bold; margin-bottom: 10px; }
+        .cover-subtitle { font-size: 14pt; opacity: 0.85; margin-bottom: 40px; }
+        .cover-period {
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 12pt;
+            margin-bottom: 30px;
+        }
+        .cover-company { font-size: 16pt; font-weight: bold; margin-bottom: 10px; }
+        .cover-meta { font-size: 10pt; opacity: 0.7; }
+        .cover-footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 9pt;
+            opacity: 0.6;
+        }
+
+        /* ─── Páginas internas ──────────────────────────────────────── */
+        .page { padding: 30px 40px; }
+
+        h1 { font-size: 18pt; color: var(--color-primary); margin-bottom: 15px;
+             border-bottom: 3px solid var(--color-primary); padding-bottom: 8px; }
+        h2 { font-size: 14pt; color: var(--color-primary); margin: 20px 0 10px; }
+        h3 { font-size: 11pt; color: var(--color-secondary); margin: 15px 0 8px; }
+
+        p { margin-bottom: 10px; }
+
+        /* ─── Resumen ejecutivo ─────────────────────────────────────── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .kpi-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border-top: 4px solid var(--color-primary);
+        }
+
+        .kpi-card.critical { border-top-color: var(--color-accent); }
+        .kpi-card.warning { border-top-color: var(--color-warning); }
+        .kpi-card.success { border-top-color: var(--color-secondary); }
+
+        .kpi-value { font-size: 24pt; font-weight: bold; color: var(--color-primary); }
+        .kpi-label { font-size: 9pt; color: var(--color-text-muted); margin-top: 4px; }
+
+        /* ─── Tabla de anomalías ────────────────────────────────────── */
+        .anomalies-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin: 15px 0;
+        }
+
+        .anomalies-table th {
+            background: var(--color-primary);
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .anomalies-table td {
+            padding: 6px;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: top;
+        }
+
+        .anomalies-table tr:nth-child(even) td { background: var(--color-surface); }
+        .anomalies-table tr:hover td { background: #e8f4f8; }
+
+        /* Badges de severidad */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+        .badge-CRITICAL { background: #fde8e8; color: #cc0000; }
+        .badge-HIGH { background: #fef3e2; color: #e65100; }
+        .badge-MEDIUM { background: #fff8e1; color: #f57f17; }
+        .badge-LOW { background: #e8f5e9; color: #2e7d32; }
+        .badge-OPEN { background: #e3f2fd; color: #1565c0; }
+        .badge-TRUE_POSITIVE { background: #fde8e8; color: #b71c1c; }
+        .badge-FALSE_POSITIVE { background: #e8f5e9; color: #1b5e20; }
+
+        /* ─── Narrativa de anomalía ────────────────────────────────── */
+        .anomaly-detail {
+            background: var(--color-surface);
+            border-left: 4px solid var(--color-accent);
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            page-break-inside: avoid;
+        }
+
+        .anomaly-detail pre {
+            white-space: pre-wrap;
+            font-family: var(--font-main);
+            font-size: 9pt;
+            color: var(--color-text);
+        }
+
+        /* ─── Sección de firmas ─────────────────────────────────────── */
+        .signature-section {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border);
+            page-break-inside: avoid;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .signature-block { text-align: center; }
+        .signature-line {
+            border-top: 1px solid var(--color-text);
+            width: 80%;
+            margin: 0 auto 8px;
+        }
+        .signature-name { font-weight: bold; font-size: 10pt; }
+        .signature-role { font-size: 9pt; color: var(--color-text-muted); }
+
+        /* ─── Encabezado y pie de página ───────────────────────────── */
+        @page {
+            size: A4;
+            margin: 20mm 15mm;
+            @top-center {
+                content: "CONFIDENCIAL — Reporte de Auditoría Financiera";
+                font-size: 8pt;
+                color: #999;
+            }
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 8pt;
+                color: #999;
+            }
+        }
+
+        .page-break { page-break-before: always; }
+        .no-break { page-break-inside: avoid; }
+    </style>
+</head>
+<body>
+
+<!-- ═══ PORTADA ═════════════════════════════════════════════════════════════ -->
+<div class="cover-page">
+    <div class="cover-logo">🔍</div>
+    <div class="cover-title">Reporte de Auditoría Financiera</div>
+    <div class="cover-subtitle">Agente de Detección de Anomalías con IA Explicable</div>
+
+    <div class="cover-period">
+        <strong>Período auditado:</strong><br>
+        {{ period_from }} al {{ period_to }}
+    </div>
+
+    <div class="cover-company">{{ company_name | default("Empresa Auditada") }}</div>
+    <div class="cover-meta">
+        Generado el {{ generated_at }}<br>
+        Sistema: Anomaly Audit Agent v1.0.0<br>
+        Clasificación: CONFIDENCIAL
+    </div>
+
+    <div class="cover-footer">
+        Este reporte fue generado automáticamente por el sistema de IA de auditoría.
+        Requiere revisión y validación por un auditor certificado.
+    </div>
+</div>
+
+<!-- ═══ RESUMEN EJECUTIVO ════════════════════════════════════════════════════ -->
+<div class="page">
+    <h1>1. Resumen Ejecutivo</h1>
+
+    <p>
+        El sistema de detección de anomalías procesó <strong>{{ stats.total_transactions | default(0) | int }}</strong>
+        transacciones durante el período comprendido entre el {{ period_from }} y el {{ period_to }}.
+        Se identificaron <strong>{{ stats.total_anomalies | default(0) | int }} anomalías</strong> que
+        requieren atención del equipo de auditoría.
+    </p>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value">{{ stats.total_transactions | default(0) | int }}</div>
+            <div class="kpi-label">Transacciones procesadas</div>
+        </div>
+        <div class="kpi-card critical">
+            <div class="kpi-value">{{ stats.total_anomalies | default(0) | int }}</div>
+            <div class="kpi-label">Anomalías detectadas</div>
+        </div>
+        <div class="kpi-card warning">
+            <div class="kpi-value">{{ stats.open_anomalies | default(0) | int }}</div>
+            <div class="kpi-label">Pendientes de revisión</div>
+        </div>
+        <div class="kpi-card critical">
+            <div class="kpi-value">{{ stats.critical_count | default(0) | int }}</div>
+            <div class="kpi-label">Severidad CRÍTICA</div>
+        </div>
+        <div class="kpi-card warning">
+            <div class="kpi-value">{{ stats.high_count | default(0) | int }}</div>
+            <div class="kpi-label">Severidad ALTA</div>
+        </div>
+        <div class="kpi-card success">
+            <div class="kpi-value">{{ stats.false_positive_rate | default("N/A") }}</div>
+            <div class="kpi-label">Tasa de Falsos Positivos</div>
+        </div>
+    </div>
+
+    <h2>Metodología</h2>
+    <p>
+        La detección se realizó mediante un <strong>ensemble de modelos de aprendizaje automático</strong>:
+        Autoencoder neuronal (PyTorch), Isolation Forest y One-Class SVM, combinados con un
+        <strong>motor de reglas deterministas</strong> que evalúa 5 tipos de patrones de riesgo:
+        montos redondos sospechosos, transacciones fuera de horario, picos de velocidad,
+        transacciones fragmentadas y pagos a nuevos proveedores de alto monto.
+    </p>
+</div>
+
+<!-- ═══ TABLA DE ANOMALÍAS ══════════════════════════════════════════════════ -->
+<div class="page page-break">
+    <h1>2. Anomalías Detectadas</h1>
+
+    {% if anomalies %}
+    <table class="anomalies-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Monto</th>
+                <th>Proveedor</th>
+                <th>Score</th>
+                <th>Severidad</th>
+                <th>Reglas</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for anomaly in anomalies %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ anomaly.date | default("N/A") }}</td>
+                <td><strong>\${{ anomaly.amount | default(0) | round(2) }}</strong></td>
+                <td>{{ anomaly.vendor_id | default("N/A") }}</td>
+                <td>{{ anomaly.anomaly_score | default(0) | round(3) }}</td>
+                <td><span class="badge badge-{{ anomaly.severity | default('LOW') }}">{{ anomaly.severity | default("LOW") }}</span></td>
+                <td>{{ anomaly.rules_triggered | join(", ") if anomaly.rules_triggered else "ML" }}</td>
+                <td><span class="badge badge-{{ anomaly.status | default('OPEN') }}">{{ anomaly.status | default("OPEN") }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No se detectaron anomalías en el período seleccionado.</p>
+    {% endif %}
+</div>
+
+<!-- ═══ DETALLE DE ANOMALÍAS DE ALTA SEVERIDAD ═══════════════════════════════ -->
+{% if high_severity_anomalies %}
+<div class="page page-break">
+    <h1>3. Detalle — Anomalías de Alta Severidad</h1>
+    <p>Las siguientes anomalías requieren revisión prioritaria por el auditor responsable:</p>
+
+    {% for anomaly in high_severity_anomalies %}
+    <div class="anomaly-detail no-break">
+        <h3>
+            Anomalía #{{ loop.index }} —
+            <span class="badge badge-{{ anomaly.severity }}">{{ anomaly.severity }}</span>
+            Score: {{ anomaly.anomaly_score | default(0) | round(3) }}
+        </h3>
+        {% if anomaly.narrative %}
+        <pre>{{ anomaly.narrative }}</pre>
+        {% else %}
+        <p>Explicación no disponible.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ═══ CONCLUSIONES Y FIRMAS ════════════════════════════════════════════════ -->
+<div class="page page-break">
+    <h1>4. Conclusiones y Recomendaciones</h1>
+
+    <p>
+        Basado en el análisis del período {{ period_from }} al {{ period_to }}, el sistema
+        identificó <strong>{{ stats.total_anomalies | default(0) | int }}</strong> transacciones
+        que presentan patrones anómalos respecto al comportamiento histórico de la empresa.
+    </p>
+
+    <h2>Recomendaciones</h2>
+    <ol style="margin-left: 20px; margin-bottom: 15px;">
+        <li style="margin-bottom: 8px;">
+            Revisar prioritariamente las {{ stats.critical_count | default(0) | int }} anomalías
+            de severidad CRÍTICA antes de aprobar pagos pendientes.
+        </li>
+        <li style="margin-bottom: 8px;">
+            Documentar el resultado de cada revisión en el sistema (TP/FP) para mejorar
+            la precisión del modelo con aprendizaje incremental.
+        </li>
+        <li style="margin-bottom: 8px;">
+            Considerar actualizar los umbrales de los proveedores con historial de pagos
+            que hayan cambiado significativamente.
+        </li>
+        <li style="margin-bottom: 8px;">
+            Programar revisión mensual de las reglas de negocio para ajustar a cambios
+            operativos de la empresa.
+        </li>
+    </ol>
+
+    <div class="signature-section">
+        <h2>Firmas y Validación</h2>
+        <p style="color: var(--color-text-muted); font-size: 9pt;">
+            Este reporte fue generado automáticamente y requiere la firma del auditor responsable
+            para su validación oficial.
+        </p>
+
+        <div class="signature-grid">
+            <div class="signature-block">
+                <br><br>
+                <div class="signature-line"></div>
+                <div class="signature-name">Auditor Responsable</div>
+                <div class="signature-role">Fecha: ________________</div>
+            </div>
+            <div class="signature-block">
+                <br><br>
+                <div class="signature-line"></div>
+                <div class="signature-name">Director Financiero</div>
+                <div class="signature-role">Fecha: ________________</div>
+            </div>
+        </div>
+    </div>
+
+    <p style="margin-top: 30px; font-size: 8pt; color: var(--color-text-muted); text-align: center;">
+        Generado por Anomaly Audit Agent v1.0.0 — {{ generated_at }}<br>
+        Sistema de detección basado en IA — No reemplaza el juicio profesional del auditor.
+    </p>
+</div>
+
+</body>
+</html>

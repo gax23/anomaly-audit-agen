@@ -1,0 +1,23 @@
+[project]
+name = "anomaly-audit-agent"
+version = "0.1.0"
+description = "Agente de auditoría de anomalías financieras"
+requires-python = ">=3.11"
+authors = [
+    {name = "Equipo Audit", email = "audit@tuempresa.com"}
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+
+[tool.ruff]
+line-length = 120
+select = ["E", "W", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true

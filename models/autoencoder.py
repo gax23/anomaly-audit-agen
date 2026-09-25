@@ -103,7 +103,11 @@ class AutoencoderDetector(BaseDetector):
             self.net.train()
             for _ in range(max(1, self.epochs // 5)):
                 self._train_epoch(dataloader)
-                
+
+            self.net.eval()
+            with torch.no_grad():
+                self.set_threshold(self.score(buffer_data))
+
             self.buffer = []
             
     def save(self, path: str) -> None:
@@ -118,7 +122,7 @@ class AutoencoderDetector(BaseDetector):
         
     def load(self, path: str) -> 'AutoencoderDetector':
         """Carga modelo desde disco."""
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, weights_only=True)
         self.input_dim = checkpoint['input_dim']
         self.net = _AutoencoderNet(self.input_dim)
         self.net.load_state_dict(checkpoint['model_state'])

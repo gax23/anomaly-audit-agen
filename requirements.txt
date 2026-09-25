@@ -5,8 +5,7 @@ pydantic==2.7.1
 pydantic-settings==2.2.1
 
 # ML/DL
---index-url https://download.pytorch.org/whl/cpu
-torch==2.3.0+cpu
+torch==2.3.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 scikit-learn==1.4.2
 numpy==1.26.4
 pandas==2.2.2
